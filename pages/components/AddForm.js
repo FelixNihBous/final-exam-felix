@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Modal, Form, Input, Space, message } from 'antd';
 // Removed: import axios from 'axios';
 
-const AddForm = ({ isModalOpen, setIsModalOpen, fetchProducts }) => {
+const AddForm = ({ isModalOpen, setIsAddModalOpen, fetchProducts }) => {
     const [form] = Form.useForm();
     
     const handleFinish = async (values) => {
@@ -24,7 +24,7 @@ const AddForm = ({ isModalOpen, setIsModalOpen, fetchProducts }) => {
             if (response.ok) {
                 message.success('Product added successfully!');
                 fetchProducts();
-                setIsModalOpen(false);
+                setIsAddModalOpen(false);
                 form.resetFields();
             } else {
                 const errorData = await response.json().catch(() => ({}));
@@ -41,7 +41,7 @@ const AddForm = ({ isModalOpen, setIsModalOpen, fetchProducts }) => {
     };
 
     const handleCancel = () => {
-        setIsModalOpen(false);
+        setIsAddModalOpen(false);
         form.resetFields();
     };
 

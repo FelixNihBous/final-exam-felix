@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Table, Space, Button, Modal, Image, Input, Select, message } from 'antd';
 import { ExclamationCircleFilled, SyncOutlined, SearchOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/router'; // 1. Import useRouter
+import { useRouter } from 'next/router';
 import EditForm from '../components/EditForm';
 import AddForm from '../components/AddForm';
-import axios from 'axios';
 
 const { confirm } = Modal;
 const { Option } = Select;
 
 function ProductList({ productData }) {
-    const router = useRouter(); // 2. Initialize router
+    const router = useRouter(); 
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -19,6 +19,7 @@ function ProductList({ productData }) {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [loading, setLoading] = useState(false);
 
+
     const uniqueCategories = useMemo(() => {
         const categories = products.map(p => p.category);
         return [...new Set(categories)].filter(Boolean);
@@ -26,8 +27,11 @@ function ProductList({ productData }) {
 
     const filteredProducts = useMemo(() => {
         return products.filter(product => {
-            const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.category.toLowerCase().includes(searchTerm.toLowerCase());
+            const name = product.name ? product.name.toLowerCase() : '';
+            const category = product.category ? product.category.toLowerCase() : '';
+            const search = searchTerm.toLowerCase();
+
+            const matchesSearch = name.includes(search) || category.includes(search);
 
             const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
 
@@ -44,6 +48,7 @@ function ProductList({ productData }) {
             setProducts(fetchedProducts);
         } catch (error) {
             console.error('Error fetching product data:', error);
+            message.error('Failed to refresh data from external API.');
         } finally {
             setLoading(false);
         }
@@ -57,16 +62,13 @@ function ProductList({ productData }) {
         );
     };
 
-
     const handleEdit = (record) => {
         setSelectedRecord(record);
         setIsModalOpen(true);
-        console.log('Editing product:', record);
     };
 
-    // **NEW:** Function to navigate to the detail page
     const handleViewDetail = (record) => {
-        router.push(`/products/${record.id}`);
+        router.push(`/products/${record.id}`); 
     };
 
     const handleDelete = (record) => {
@@ -81,10 +83,7 @@ function ProductList({ productData }) {
                 try {
                     const newProducts = products.filter(item => item.id !== record.id);
                     setProducts(newProducts);
-                    
-                    message.success(`Product "${record.name}" deleted successfully.`);
-                    
-                    console.log('Product deleted:', record.id);
+                    message.success(`Product "${record.name}" deleted successfully (Local State Only).`);
                 } catch (error) {
                     console.error('Error deleting product:', error);
                     message.error(`Failed to delete product "${record.name}".`);
@@ -146,10 +145,7 @@ function ProductList({ productData }) {
             key: 'action',
             render: (text, record) => (
                 <Space size="middle">
-                    {/* **NEW:** View Detail Button */}
-                    <Button
-                        onClick={() => handleViewDetail(record)}
-                    >
+                    <Button onClick={() => handleViewDetail(record)}>
                         View Detail
                     </Button>
                     
@@ -172,7 +168,8 @@ function ProductList({ productData }) {
     ];
 
     return (
-        <div>
+        <div style={{ padding: '20px' }}>
+            <h1 style={{ marginBottom: 20 }}>Product Management Dashboard</h1>
             <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
                 <Space>
                     <Button
@@ -219,6 +216,7 @@ function ProductList({ productData }) {
                 columns={columns}
                 rowKey="id"
                 loading={loading}
+                pagination={{ pageSize: 10 }}
             />
 
             <EditForm
@@ -234,14 +232,13 @@ function ProductList({ productData }) {
                 fetchProducts={fetchProducts}
             />
         </div>
-
     );
 }
 
-export const getServerSideProps = async (context) => {
+export const getServerSideProps = async () => {
     try {
-        const productData = await fetch('https://course.summitglobal.id/products');
-        const data = await productData.json();
+        const response = await fetch('https://course.summitglobal.id/products');
+        const data = await response.json();
 
         const products = data?.body?.data || [];
 

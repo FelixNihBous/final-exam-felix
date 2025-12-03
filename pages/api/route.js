@@ -22,10 +22,16 @@ export default async function handler(req, res) {
             const response = await axios.post(BASE_URL, body);
             res.status(response.status).json(response.data);
         } else if (method === 'PUT') {
-            const { id, ...updateData } = body;
-            const putUrl = `${BASE_URL}?id=${id}`;
-            const response = await axios.put(putUrl, updateData);
-            res.status(response.status).json(response.data);
+            const putUrl = `${BASE_URL}?id=${body.id}`;
+            const response = await fetch(putUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+            const data = await response.json();
+            res.status(response.status).json(data);
         } else {
             res.setHeader('Allow', ['GET', 'POST', 'PUT']);
             res.status(405).end(`Method ${method} Not Allowed`);

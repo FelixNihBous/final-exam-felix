@@ -4,13 +4,11 @@ import Head from 'next/head';
 import { Card, Button, Typography, Image, Tag, Descriptions, Row, Col, Skeleton, Space } from 'antd';
 import { ArrowLeftOutlined, ShoppingCartOutlined, DollarCircleOutlined, TagsOutlined } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
-
+const { Title, Paragraph } = Typography;
 export default function ProductDetail({ product }) {
     const router = useRouter();
-    const { id } = router.query;
 
-    const isLoading = !product;
+    const isLoading = router.isFallback || !product;
 
     if (isLoading) {
         return (
@@ -44,7 +42,7 @@ export default function ProductDetail({ product }) {
     return (
         <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
             <Head>
-                <title>{product.name} | Product Detail</title>
+                <title>{product.name || 'Product'} | Product Detail</title>
             </Head>
 
             <Button
@@ -60,23 +58,23 @@ export default function ProductDetail({ product }) {
                 <Row gutter={32}>
                     <Col xs={24} lg={10}>
                         <Image
-                            src={product.image}
-                            alt={product.name}
+                            src={product.image || 'https://via.placeholder.com/400x300?text=No+Image'}
+                            alt={product.name || 'Product'}
                             style={{ width: '100%', height: 'auto', borderRadius: 8, objectFit: 'contain' }}
                         />
                     </Col>
 
                     <Col xs={24} lg={14}>
-                        <Title level={2} style={{ marginTop: 0 }}>{product.name}</Title>
+                        <Title level={2} style={{ marginTop: 0 }}>{product.name || 'Unnamed Product'}</Title>
 
                         <Space direction="vertical" size="large" style={{ width: '100%' }}>
                             <Descriptions bordered column={1} size="small">
                                 <Descriptions.Item label={<DollarCircleOutlined />}>
-                                    <Title level={3} style={{ margin: 0 }}>${product.price.toFixed(2)}</Title>
+                                    <Title level={3} style={{ margin: 0 }}>${product.price ? product.price.toFixed(2) : 'N/A'}</Title>
                                 </Descriptions.Item>
 
                                 <Descriptions.Item label={<TagsOutlined />}>
-                                    <Tag color="blue">{product.category}</Tag>
+                                    <Tag color="blue">{product.category || 'Uncategorized'}</Tag>
                                 </Descriptions.Item>
 
                                 <Descriptions.Item label="Stock Status">
@@ -108,20 +106,44 @@ export default function ProductDetail({ product }) {
     );
 }
 
-export async function getServerSideProps(context) {
-    const { id } = context.params;
-
+export async function getStaticPaths() {
     try {
         const response = await fetch('https://course.summitglobal.id/products');
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch products. Status: ${response.status}`);
-        }
-
         const data = await response.json();
         const products = data?.body?.data || [];
 
-        const product = products.find(p => p.id === parseInt(id));
+        // Generate paths for all existing product IDs
+        const paths = products.map(product => ({
+            params: { id: product.id.toString() },
+        }));
+
+        return {
+            paths,
+            fallback: 'blocking', 
+        };
+    } catch (error) {
+        console.error('Error fetching paths for SSG:', error);
+        return {
+            paths: [],
+            fallback: 'blocking',
+        };
+    }
+}
+
+export async function getStaticProps(context) {
+    const productId = context.params.id;
+
+    try {
+        const allProductsResponse = await fetch('https://course.summitglobal.id/products');
+
+        if (!allProductsResponse.ok) {
+            throw new Error(`Failed to fetch product list. Status: ${allProductsResponse.status}`);
+        }
+
+        const data = await allProductsResponse.json();
+        const products = data?.body?.data || [];
+
+        const product = products.find(p => p.id === parseInt(productId));
 
         if (!product) {
             return {
@@ -133,14 +155,13 @@ export async function getServerSideProps(context) {
             props: {
                 product,
             },
+            revalidate: 60,
         };
     } catch (error) {
-        console.error(`Error fetching product with ID ${id} from external API:`, error);
+        console.error(`Error fetching product data for ID ${productId}:`, error);
 
         return {
-            props: {
-                product: null,
-            },
+            notFound: true,
         };
     }
 }

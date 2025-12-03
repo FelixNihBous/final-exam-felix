@@ -8,6 +8,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 function RandomProductCard() {
+    const router = useRouter();
     const [randomProduct, setRandomProduct] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -57,8 +58,9 @@ function RandomProductCard() {
                     type="primary" 
                     icon={<ShoppingCartOutlined />} 
                     disabled={isOutOfStock}
+                    onClick={() => router.push('/products')}
                 >
-                    View Product
+                    Go to Dashboard
                 </Button>,
                 <Button key="refresh" icon={<SyncOutlined />} onClick={fetchRandomProduct} loading={loading}>
                     New Random

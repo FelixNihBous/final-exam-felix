@@ -5,20 +5,34 @@ import axios from 'axios';
 const EditForm = ({ isModalOpen, setIsModalOpen, selectedRecord, fetchProducts }) => {
     const [form] = Form.useForm();
 
+    useEffect(() => {
+        if (selectedRecord) {
+            form.setFieldsValue(selectedRecord);
+        }
+    }, [selectedRecord, form]);
+
     const handleFinish = async (values) => {
         try {
-            const putData = { id: selectedRecord.id, ...values };
+            const putData = { ...selectedRecord, ...values };
+            console.log('Sending PUT request with data:', putData);
             const response = await axios.put('/api/route', putData);
+            console.log('PUT response:', response);
             if (response.status === 200) {
                 message.success('Product updated successfully!');
                 fetchProducts();
                 setIsModalOpen(false);
             } else {
-                message.error('Failed to update product');
+                message.error(`Failed to update product: ${response.status} ${response.statusText}`);
             }
         } catch (error) {
             console.error('Error updating product:', error);
-            message.error('Error updating product');
+            if (error.response) {
+                console.error('Response data:', error.response.data);
+                console.error('Response status:', error.response.status);
+                message.error(`Error updating product: ${error.response.status} - ${error.response.data?.error || 'Unknown error'}`);
+            } else {
+                message.error('Network error occurred while updating product.');
+            }
         }
     };
 
@@ -80,7 +94,6 @@ const EditForm = ({ isModalOpen, setIsModalOpen, selectedRecord, fetchProducts }
                 <Form.Item
                     label="Price"
                     name="price"
-                    // Added a validator to ensure it is treated as a number
                     rules={[{ required: true, message: 'Please input your Price!' }, { type: 'number', transform: (value) => Number(value), message: 'Price must be a number' }]}
                 >
                     <Input type="number" min={0} step="0.01" /> 
@@ -89,9 +102,16 @@ const EditForm = ({ isModalOpen, setIsModalOpen, selectedRecord, fetchProducts }
                 <Form.Item
                     label="Stock"
                     name="stock"
-                    rules={[{ required: true, message: 'Please input your Stock!' }, { type: 'integer', transform: (value) => Number(value), message: 'Stock must be an integer' }]}
+                    rules={[{ type: 'integer', transform: (value) => Number(value), message: 'Stock must be an integer' }]}
                 >
-                    <Input type="number" min={0} step={1} /> 
+                    <Input type="number" min={0} step={1} />
+                </Form.Item>
+
+                <Form.Item
+                    label="Description"
+                    name="description"
+                >
+                    <Input.TextArea />
                 </Form.Item>
 
             </Form>
