@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Table, Space, Button, Modal, Image, Input, Select, message } from 'antd';
+import { Table, Space, Button, Modal, Image, Input, Select, message, Layout } from 'antd';
 import { ExclamationCircleFilled, SyncOutlined, SearchOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/router';
+import Sidebar from '../components/Sidebar';
 import EditForm from '../components/EditForm';
 import AddForm from '../components/AddForm';
 
@@ -9,8 +10,13 @@ const { confirm } = Modal;
 const { Option } = Select;
 
 function ProductList({ productData }) {
-    const router = useRouter(); 
-    
+    const router = useRouter();
+    const [collapsed, setCollapsed] = useState(false);
+
+    const onCollapse = (collapsed) => {
+        setCollapsed(collapsed);
+    };
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -168,70 +174,75 @@ function ProductList({ productData }) {
     ];
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h1 style={{ marginBottom: 20 }}>Product Management Dashboard</h1>
-            <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
-                <Space>
-                    <Button
-                        type="primary"
-                        onClick={() => setIsAddModalOpen(true)}
-                    >
-                        Add New Product
-                    </Button>
-                    <Button
-                        icon={<SyncOutlined />}
-                        onClick={fetchProducts}
+        <Layout style={{ minHeight: '100vh' }}>
+            <Sidebar collapsed={collapsed} onCollapse={onCollapse} />
+            <Layout>
+                <Layout.Content style={{ padding: '20px' }}>
+                    <h1 style={{ marginBottom: 20 }}>Product Management Dashboard</h1>
+                    <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
+                        <Space>
+                            <Button
+                                type="primary"
+                                onClick={() => setIsAddModalOpen(true)}
+                            >
+                                Add New Product
+                            </Button>
+                            <Button
+                                icon={<SyncOutlined />}
+                                onClick={fetchProducts}
+                                loading={loading}
+                            >
+                                Refresh Data
+                            </Button>
+                        </Space>
+
+                        <Space>
+                            <Select
+                                placeholder="Filter by Category"
+                                allowClear
+                                style={{ width: 200 }}
+                                onChange={value => setSelectedCategory(value)}
+                                value={selectedCategory}
+                            >
+                                {uniqueCategories.map(category => (
+                                    <Option key={category} value={category}>{category}</Option>
+                                ))}
+                            </Select>
+
+                            <Input
+                                placeholder="Search by Name or Category"
+                                prefix={<SearchOutlined />}
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                style={{ width: 300 }}
+                                allowClear
+                            />
+                        </Space>
+                    </Space>
+
+                    <Table
+                        dataSource={filteredProducts}
+                        columns={columns}
+                        rowKey="id"
                         loading={loading}
-                    >
-                        Refresh Data
-                    </Button>
-                </Space>
-
-                <Space>
-                    <Select
-                        placeholder="Filter by Category"
-                        allowClear
-                        style={{ width: 200 }}
-                        onChange={value => setSelectedCategory(value)}
-                        value={selectedCategory}
-                    >
-                        {uniqueCategories.map(category => (
-                            <Option key={category} value={category}>{category}</Option>
-                        ))}
-                    </Select>
-
-                    <Input
-                        placeholder="Search by Name or Category"
-                        prefix={<SearchOutlined />}
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        style={{ width: 300 }}
-                        allowClear
+                        pagination={{ pageSize: 10 }}
                     />
-                </Space>
-            </Space>
 
-            <Table
-                dataSource={filteredProducts}
-                columns={columns}
-                rowKey="id"
-                loading={loading}
-                pagination={{ pageSize: 10 }}
-            />
-
-            <EditForm
-                isModalOpen={isModalOpen}
-                setIsModalOpen={setIsModalOpen}
-                selectedRecord={selectedRecord}
-                updateProduct={updateProduct}
-                fetchProducts={fetchProducts}
-            />
-            <AddForm
-                isModalOpen={isAddModalOpen}
-                setIsAddModalOpen={setIsAddModalOpen}
-                fetchProducts={fetchProducts}
-            />
-        </div>
+                    <EditForm
+                        isModalOpen={isModalOpen}
+                        setIsModalOpen={setIsModalOpen}
+                        selectedRecord={selectedRecord}
+                        updateProduct={updateProduct}
+                        fetchProducts={fetchProducts}
+                    />
+                    <AddForm
+                        isModalOpen={isAddModalOpen}
+                        setIsAddModalOpen={setIsAddModalOpen}
+                        fetchProducts={fetchProducts}
+                    />
+                </Layout.Content>
+            </Layout>
+        </Layout>
     );
 }
 

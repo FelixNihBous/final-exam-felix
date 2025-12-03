@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Button, Modal, Form, Input, Space, message } from 'antd';
-// Removed: import axios from 'axios';
 
 const AddForm = ({ isModalOpen, setIsAddModalOpen, fetchProducts }) => {
     const [form] = Form.useForm();
